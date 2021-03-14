@@ -1,0 +1,80 @@
+﻿@page "/books"
+
+@using BlazorLibrary.Models
+@using BlazorLibrary.Services
+@using System.Linq
+
+@inject BookService BookService
+@inject AuthorService AuthorService
+
+<h3>Books</h3>
+
+<button @onclick="@(() => OnAddBookClick())">Add Book</button>
+
+@if (addingBook)
+{
+<form>
+    <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" class="form-control" @bind-value="@newBook.Title" id="title" placeholder="Enter title">
+    </div>
+    <div class="form-group">
+        <label for="author">Author</label>
+        <select class="form-control" id="author" @bind="@newBook.Author.Id">
+            @foreach (Author author in authors)
+            {
+                <option value="@author.Id">@author.FirstName @author.LastName</option>
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary" @onclick="@(() => AddBook())">Submit</button>
+</form>
+}
+
+<table class="table">
+    <thead class="thead-dark">
+        <tr>
+            <th>Title</th>
+            <th>Author</th>
+        </tr>
+    </thead>
+    @foreach (Book book in allBooks)
+    {
+        <tr>
+            <td>@book.Title</td>
+            <td>@book.Author.FirstName @book.Author.LastName</td>
+        </tr>
+    }
+
+</table>
+
+@code {
+    private ICollection<Book> allBooks;
+    private IEnumerable<Author> authors;
+    private bool addingBook = false;
+    private Book newBook;
+
+    protected override async Task OnInitializedAsync()
+    {
+        allBooks = await BookService.GetAllBooksAsync();
+        authors = await AuthorService.GetAllAuthorsAsync();
+    }
+
+    private void OnAddBookClick()
+    {
+        addingBook = true;
+        newBook = new Book();
+        newBook.Author = new Author();
+    }
+
+    private async Task AddBook()
+    {
+        await BookService.AddNewBook(newBook);
+
+        allBooks.Add(newBook);
+
+        StateHasChanged();
+
+        addingBook = false;
+    }
+}
